@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feliz Día de las Madres</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #fff0f5;
+            text-align: center;
+            padding: 30px;
+        }
+
+        h1 {
+            color: #e91e63;
+        }
+
+        #nombre-output {
+            font-size: 2em;
+            margin-top: 10px;
+        }
+
+        #mensaje-output {
+            font-family: 'Brush Script MT', cursive;
+            font-size: 1.5em;
+            color: #b71c1c;
+            background: linear-gradient(90deg, #fce4ec, #f8bbd0);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 0 10px rgba(231, 64, 88, 0.3);
+            margin-top: 15px;
+        }
+
+        .upload-section {
+            margin-top: 20px;
+        }
+
+        input[type="text"],
+        textarea {
+            padding: 10px;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 1em;
+            width: 80%;
+            max-width: 400px;
+        }
+
+        input[type="file"] {
+            margin-top: 10px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.8);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            animation: fadeIn 1s ease;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .slideshow {
+            margin-top: 20px;
+            position: relative;
+            width: 100%;
+        }
+
+        .slideshow img {
+            width: 100%;
+            border-radius: 10px;
+            display: none;
+            animation: slideFade 1.5s ease-in-out;
+        }
+
+        .slideshow img.active {
+            display: block;
+        }
+
+        @keyframes slideFade {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 20px;
+            cursor: pointer;
+            color: #e91e63;
+        }
+
+        #record-btn {
+            margin-top: 20px;
+            background-color: #e91e63;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>¡Feliz Día de las Madres! 🌸</h1>
+
+    <p>Escribe el nombre de tu mamá:</p>
+    <input type="text" id="nombre" placeholder="Ej. María" />
+
+    <p>Escribe un mensaje especial para ella:</p>
+    <textarea id="mensaje" rows="4" placeholder="Gracias por todo tu amor, tu paciencia y tu alegría..."></textarea>
+
+    <div class="upload-section">
+        <p>Sube tus fotos favoritas con ella:</p>
+        <input type="file" id="foto" multiple accept="image/*" />
+        <br><br>
+        <button onclick="abrirModal()">Ver Felicitación</button>
+    </div>
+
+    <div class="modal" id="modal" onclick="cerrarModalDesdeFondo(event)">
+        <div class="modal-content" onclick="event.stopPropagation();">
+            <span class="close-btn" onclick="cerrarModal()">&times;</span>
+            <div id="nombre-output"></div>
+            <div id="mensaje-output"></div>
+            <div class="slideshow" id="presentacion"></div>
+            <audio id="audio" loop>
+                <source src="https://www.bensound.com/bensound-music/bensound-love.mp3" type="audio/mpeg">
+                Tu navegador no soporta el audio.
+            </audio>
+            <button id="record-btn" onclick="grabarFelicitacion()">Grabar y Descargar Video</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.webrtc-experiment.com/RecordRTC.js"></script>
+    <script>
+        let index = 0;
+        let imagenes = [];
+        let intervalo;
+        const audio = document.getElementById('audio');
+
+        document.getElementById('foto').addEventListener('change', prepararPresentacion);
+
+        function mostrarNombreYMensaje() {
+            const nombre = document.getElementById('nombre').value;
+            const mensaje = document.getElementById('mensaje').value;
+            const nombreOut = document.getElementById('nombre-output');
+            const mensajeOut = document.getElementById('mensaje-output');
+
+            if (nombre) {
+                nombreOut.innerHTML = `Para ti con todo mi amor, <strong>${nombre}</strong>`;
+            } else {
+                nombreOut.innerHTML = '';
+            }
+
+            mensajeOut.textContent = mensaje;
+        }
+
+        function prepararPresentacion() {
+            const input = document.getElementById('foto');
+            const presentacion = document.getElementById('presentacion');
+            presentacion.innerHTML = '';
+            imagenes = [];
+            clearInterval(intervalo);
+
+            for (const archivo of input.files) {
+                const lector = new FileReader();
+                lector.onload = function (e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    presentacion.appendChild(img);
+                    imagenes.push(img);
+                };
+                lector.readAsDataURL(archivo);
+            }
+        }
+
+        function iniciarPresentacion() {
+            if (imagenes.length === 0) return;
+            index = 0;
+            imagenes.forEach(img => img.classList.remove('active'));
+            imagenes[0].classList.add('active');
+            intervalo = setInterval(() => {
+                imagenes[index].classList.remove('active');
+                index = (index + 1) % imagenes.length;
+                imagenes[index].classList.add('active');
+            }, 3000);
+        }
+
+        function abrirModal() {
+            mostrarNombreYMensaje();
+            document.getElementById('modal').style.display = 'flex';
+            iniciarPresentacion();
+            audio.currentTime = 0;
+            audio.play();
+        }
+
+        function cerrarModal() {
+            clearInterval(intervalo);
+            document.getElementById('modal').style.display = 'none';
+            audio.pause();
+        }
+
+        function cerrarModalDesdeFondo(event) {
+            if (event.target === document.getElementById('modal')) {
+                cerrarModal();
+            }
+        }
+
+        function grabarFelicitacion() {
+            const modal = document.querySelector('.modal-content');
+
+            // Asegurarse de que la presentación está completamente cargada antes de grabar
+            html2canvas(modal).then(canvas => {
+                // Crear un flujo de captura a partir del canvas
+                const stream = canvas.captureStream(25); // Aumentamos la tasa de cuadros por segundo (FPS)
+                const recorder = new RecordRTC(stream, {
+                    type: 'video'
+                });
+
+                recorder.startRecording();
+
+                // Aumentamos el tiempo de grabación a 15 segundos para garantizar que capture la presentación completa
+                setTimeout(() => {
+                    recorder.stopRecording(() => {
+                        const blob = recorder.getBlob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'felicitacion-mama.webm';
+                        a.click();
+                    });
+                }, 15000); // 15 segundos de grabación
+            });
+        }
+    </script>
+
+
+</body>
+
+</html>
